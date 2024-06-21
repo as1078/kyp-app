@@ -10,7 +10,7 @@ from config import settings
 from qdrant_client.models import VectorParams, Distance
 import Prompts
 import json
-
+from neo4j import GraphDatabase
 
 
 class VectorDB():
@@ -20,6 +20,10 @@ class VectorDB():
             api_key=settings.QDRANT_API_KEY,
         )
         openai.api_key = settings.OPENAI_API_KEY
+        neo4j_url = settings.NEO4J_URL
+        neo4j_user = settings.NEO4J_USER
+        neo4j_password = settings.NEO4J_PASSWORD
+        self.gds = GraphDatabase.driver(neo4j_url, auth=(neo4j_user, neo4j_password))
 
         # self.qdrant_client.create_collection(
         #     collection_name="1536_entities",
@@ -134,8 +138,35 @@ class VectorDB():
         )
         return response['data'][0]['embedding']
     
-    def upsert_entity(self, name, vector):
-        return ""
+    def generate_cypher(self, json_object):
+        e_statements = []
+        r_statements = []
+
+        e_label_map = {}
+        for entity in json_object['entities']:
+            label = entity['type']
+            id = entity['name']
+            id = id.replace("-", "").replace("_", "")
+            properties = {k: v for k, v in entity.items() if k not in ["name", "type"]}
+            cypher = f'MERGE (n:{label} {{id: "{id}"}})'
+            if properties:
+                props_str = ", ".join(
+                    [f'n.{key} = "{val}"' for key, val in properties.items()]
+                )
+                cypher += f" ON CREATE SET {props_str}"
+            e_statements.append(cypher)
+            e_label_map[id] = label
+
+            for rs in json_object['relationships']:
+                src_id, rs_type, tgt_id = rs['source'], rs['relation'], rs['target']
+                src_id = src_id.replace("-", "").replace("_", "")
+                tgt_id = tgt_id.replace("-", "").replace("_", "")
+                src_label = e_label_map[src_id]
+                tgt_label = e_label_map[tgt_id]
+
+                cypher = f'MERGE (a:{src_label} {{id: "{src_id}"}}) MERGE (b:{tgt_label} {{id: "{tgt_id}"}}) MERGE (a)-[:{rs_type}]->(b)'
+                r_statements.append(cypher)
+        return e_statements + r_statements
     
     def ner(self, text_chunks: List[str]):
         prompt = Prompts.ner
@@ -149,13 +180,13 @@ class VectorDB():
             )
             result = completion.choices[0].message.content
             json_result = json.loads(result)
-            if "entities" in json_result:
-                for entity in json_result['entities']:
-                    point = {
-                        "id": entity["name"],
-                        "payload": entity,
+            cypher_statements = self.generate_cypher(json_result)
+            for stmt in cypher_statements:
+                try:
+                    self.gds.execute_query(stmt)
+                except Exception as e:
+                    print(f"Error executing statement: {stmt}. Error: {e}")
+            
 
-
-                    }
 
         

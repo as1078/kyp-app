@@ -86,5 +86,8 @@ class Prompts():
         }
 
         Now do this for the following piece of text
+        
+        Case Sheet:
+        $ctext
         """
         
