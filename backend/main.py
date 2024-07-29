@@ -1,6 +1,5 @@
 from fastapi import FastAPI, Request, Response, File, UploadFile
 from fastapi.responses import JSONResponse
-from langchain.embeddings import OpenAIEmbeddings
 from vectorDB import VectorDB
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -40,7 +39,7 @@ async def upload_paragraph(file: UploadFile = File(...)):
 @app.get('/search')
 def search(query: str):
     print(f"Received query: {query}")
-    answer = vectorDB.create_answer_with_context(query)
+    answer = vectorDB.query_graph(query)
     print(answer)
     if not answer:
         return JSONResponse(content={'error': 'We were unable to generate an answer for the query'}, status_code=500)
