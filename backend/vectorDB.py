@@ -3,19 +3,17 @@ from langchain.text_splitter import CharacterTextSplitter
 from typing import List
 import openai
 import io
-import sys
+import pandas as pd
 import uuid
 from langchain_core.documents import Document
-from langchain_experimental.graph_transformers import LLMGraphTransformer
 from langchain_community.graphs.graph_document import GraphDocument
-from langchain_openai import ChatOpenAI
-from langchain_community.graphs import Neo4jGraph
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from config import settings
-import Prompts
-from langchain.chains import GraphCypherQAChain
-from langchain.prompts.prompt import PromptTemplate
-
-#from neo4j import GraphDatabase
+from neo4j import GraphDatabase, Result
+from Prompts import lc_retrieval_query
+from langchain_community.vectorstores import Neo4jVector
+from langchain.chains import RetrievalQA
+from typing import Dict, Any
 
 
 class VectorDB():
@@ -25,21 +23,22 @@ class VectorDB():
         self.neo4j_url = settings.NEO4J_URL
         self.neo4j_user = settings.NEO4J_USER
         self.neo4j_password = settings.NEO4J_PASSWORD
-        self.graph = Neo4jGraph(url=self.neo4j_url, username=self.neo4j_user, password=self.neo4j_password)
+        self.driver = GraphDatabase.driver(self.neo4j_url, auth=(self.neo4j_user, self.neo4j_password))
         self.llm = ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo", openai_api_key=openai.api_key)
-        self.llm_transformer = LLMGraphTransformer(
-            llm=self.llm,
-            node_properties=["description"],
-            relationship_properties=["description"]
-        )
-        self.qa_prompt = PromptTemplate(
-    input_variables=["context", "question"], template=Prompts.CYPHER_QA_TEMPLATE
-)
-        self.cypher_prompt = PromptTemplate(
-    template = Prompts.cypher_generation_template,
-    input_variables = ["schema", "question"]
-)
-
+        self.lc_retrieval_query = lc_retrieval_query()
+        self.lc_vector = Neo4jVector.from_existing_index(
+                    OpenAIEmbeddings(model="text-embedding-3-small"),
+                    url=self.neo4j_url,
+                    username=self.neo4j_user,
+                    password=self.neo4j_password,
+                    index_name="entity",
+                    retrieval_query=self.lc_retrieval_query)
+        self.qa_chain = RetrievalQA.from_chain_type(
+                        llm=self.llm,
+                        retriever=self.lc_vector.as_retriever(),
+                        return_source_documents=True,
+                        verbose = True)
+        
     def read_data_from_pdf(self, file_content: bytes):
         print("reading data from pdf...")
         text = ""
@@ -78,19 +77,20 @@ class VectorDB():
             include_source=True
         )
     
+    def db_query(self, cypher: str, params: Dict[str, Any] = {}) -> pd.DataFrame:
+        """Executes a Cypher statement and returns a DataFrame"""
+        return self.driver.execute_query(
+            cypher, parameters_=params, result_transformer_=Result.to_df
+        )
     
     def query_graph(self, user_input):
-        chain = GraphCypherQAChain.from_llm(
-            llm=self.llm,
-            graph=self.graph,
-            verbose=True,
-            return_intermediate_steps=True,
-            cypher_prompt=self.cypher_prompt,
-            qa_prompt=self.qa_prompt
-        )
         print("User input: " + user_input)
-        result = chain.invoke(user_input)
-        return result
+        response = self.qa_chain.invoke({"query": user_input})
+        source = response.get('source_documents', [])[0]
+        metadata = source.metadata
+        #relationships_data = metadata['RelationshipsData']
+        #return (response["result"], relationships_data)
+        return (response["result"], metadata)
 
     def entity_resolution():
         return None
