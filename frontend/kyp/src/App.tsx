@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import './App.css';
 import axios from "axios";
-import { TextField, IconButton } from "@material-ui/core";
+import { TextField, IconButton, Typography } from "@material-ui/core";
 import InputAdornment from "@material-ui/core/InputAdornment";
 import SearchIcon from "@material-ui/icons/Search";
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import { CircularProgress, VStack, HStack } from "@chakra-ui/react";
 import CloseIcon from '@mui/icons-material/Close';
+import GraphComponent from './graph/GraphComponent';
+import { RelationshipMetadata, NodeData } from './graph/GraphData';
+
 
 const App: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -15,6 +18,8 @@ const App: React.FC = () => {
   const [fileUploadMessage, setFileUploadMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState('');
   const [searchAnswer, setSearchAnswer] = useState('');
+  const [graphData, setGraphData] = useState<RelationshipMetadata[]>([]);
+  const [entityData, setEntityData] = useState<NodeData>();
   const [uploading, setUploading] = useState(false);
   const host = "http://localhost:8000"
   const onFileLoad = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -27,6 +32,7 @@ const App: React.FC = () => {
     }
   };
 
+  
   const uploadFile = () => {
     setUploading(true);
     if (file) {
@@ -63,7 +69,23 @@ const App: React.FC = () => {
     await axios.get(host + `/search?query=${searchQuery}`)
       .then(res => {
         if (res.status === 200) {
-          setSearchAnswer(res.data.success)
+          console.log(res)
+          setSearchAnswer(res.data.answer)
+          const metadata = res.data.metadata
+          const entityData = metadata.EntityData
+          console.log(entityData)
+          const relationshipsData = metadata.RelationshipsData
+          const parsedMetadata: RelationshipMetadata[] = relationshipsData.map((item: any) => ({
+            descriptionText: item.descriptionText,
+            entityName1: item.entityName1,
+            entityName2: item.entityName2,
+            type: item.type
+          }));
+          const firstEntity = entityData[0]
+          const parsedEntityData = new NodeData("1", firstEntity.name)
+          setEntityData(parsedEntityData);
+          setGraphData(parsedMetadata)
+          console.log(parsedMetadata)
         } else {
           console.error("Unexpected status code:", res.status);
         }
@@ -98,7 +120,13 @@ const App: React.FC = () => {
           />
           </form>
         </div>
-        {searchAnswer}
+        <Typography>{searchAnswer}</Typography>
+        {graphData.length > 0 && entityData && (
+          <div style={{ width: '100%', height: '400px' }}>
+            <GraphComponent metadata={graphData} entityData={entityData} />
+          </div>)}
+        
+        {/* <Typography>{graphData}</Typography> */}
         <h1>or</h1>
         <div className="file-uploader">
           <HStack>
@@ -143,7 +171,6 @@ const App: React.FC = () => {
           }
         </div>
         <div>{fileUploadMessage}</div>
-        
       </VStack>
     </>
   );

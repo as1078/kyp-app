@@ -39,11 +39,11 @@ async def upload_paragraph(file: UploadFile = File(...)):
 @app.get('/search')
 def search(query: str):
     print(f"Received query: {query}")
-    answer = vectorDB.query_graph(query)
+    answer, metadata = vectorDB.query_graph(query)
     print(answer)
     if not answer:
         return JSONResponse(content={'error': 'We were unable to generate an answer for the query'}, status_code=500)
-    return JSONResponse(content={'success': answer}, status_code=200)
+    return JSONResponse(content={'answer': answer, 'metadata': metadata}, status_code=200)
 
 
 @app.get("/")
