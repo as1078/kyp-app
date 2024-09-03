@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Response, File, UploadFile
+from fastapi import FastAPI, HTTPException, File, UploadFile
 from fastapi.responses import JSONResponse
 from vectorDB import VectorDB
 from fastapi.middleware.cors import CORSMiddleware
@@ -44,6 +44,17 @@ def search(query: str):
     if not answer:
         return JSONResponse(content={'error': 'We were unable to generate an answer for the query'}, status_code=500)
     return JSONResponse(content={'answer': answer, 'metadata': metadata}, status_code=200)
+
+@app.get("/getNode")
+def get_node(node_name: str):
+    try:
+        result = vectorDB.retrieve_node_data(node_name)
+        return JSONResponse(content={'result': result}, status_code=200)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+    return
 
 
 @app.get("/")

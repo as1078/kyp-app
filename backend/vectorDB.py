@@ -10,10 +10,14 @@ from langchain_community.graphs.graph_document import GraphDocument
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from config import settings
 from neo4j import GraphDatabase, Result
-from Prompts import lc_retrieval_query
+from Prompts import lc_retrieval_query, custom_prompt_template, node_click_cypher_query
+from langchain_core.runnables import RunnableLambda
+from langchain.prompts import PromptTemplate
 from langchain_community.vectorstores import Neo4jVector
 from langchain.chains import RetrievalQA
 from typing import Dict, Any
+
+
 
 
 class VectorDB():
@@ -33,12 +37,23 @@ class VectorDB():
                     password=self.neo4j_password,
                     index_name="entity",
                     retrieval_query=self.lc_retrieval_query)
+        CUSTOM_PROMPT = PromptTemplate(
+            template=custom_prompt_template, input_variables=["context", "question"]
+        )
         self.qa_chain = RetrievalQA.from_chain_type(
                         llm=self.llm,
                         retriever=self.lc_vector.as_retriever(),
                         return_source_documents=True,
-                        verbose = True)
-        
+                        verbose = True,
+        )
+    
+    def inspect(self, state):
+        """Print the state passed between components in the chain"""
+        print("\n======== Intermediate State ========")
+        print(state)
+        print("====================================\n")
+        return state
+
     def read_data_from_pdf(self, file_content: bytes):
         print("reading data from pdf...")
         text = ""
@@ -77,20 +92,29 @@ class VectorDB():
             include_source=True
         )
     
-    def db_query(self, cypher: str, params: Dict[str, Any] = {}) -> pd.DataFrame:
-        """Executes a Cypher statement and returns a DataFrame"""
-        return self.driver.execute_query(
-            cypher, parameters_=params, result_transformer_=Result.to_df
+    def db_query(self, cypher: str, params: Dict[str, Any] = {}) -> List[Dict[str, Any]]:
+        result = self.driver.execute_query(
+                    cypher, 
+                    parameters_=params, 
+                    result_transformer_=lambda result: [dict(record) for record in result]
         )
+        return result[0]
+        
     
     def query_graph(self, user_input):
         print("User input: " + user_input)
         response = self.qa_chain.invoke({"query": user_input})
         source = response.get('source_documents', [])[0]
+        print(response)
         metadata = source.metadata
         #relationships_data = metadata['RelationshipsData']
         #return (response["result"], relationships_data)
         return (response["result"], metadata)
+    
+    def retrieve_node_data(self, user_input):
+        node_prompt = node_click_cypher_query
+        result = self.db_query(node_prompt, {"query": user_input})
+        return result
 
     def entity_resolution():
         return None

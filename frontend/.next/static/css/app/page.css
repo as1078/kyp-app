@@ -1,27 +1,27 @@
-/*!*************************************************************************************************************************************************************************************************************************************************************!*\
-  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[13].oneOf[12].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[13].oneOf[12].use[3]!./src/app/App.css ***!
-  \*************************************************************************************************************************************************************************************************************************************************************/
-#root {
+/*!*******************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[13].oneOf[7].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[13].oneOf[7].use[3]!./src/app/page.module.css ***!
+  \*******************************************************************************************************************************************************************************************************************************************************************/
+#page_root__qGic0 {
   max-width: 1280px;
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
 }
 
-.logo {
+.page_logo__7fc9l {
   height: 6em;
   padding: 1.5em;
   will-change: filter;
   transition: filter 300ms;
 }
-.logo:hover {
+.page_logo__7fc9l:hover {
   filter: drop-shadow(0 0 2em #646cffaa);
 }
-.logo.react:hover {
+.page_logo__7fc9l.page_react__E2YRn:hover {
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
 
-@keyframes logo-spin {
+@keyframes page_logo-spin__5feT0 {
   from {
     transform: rotate(0deg);
   }
@@ -31,30 +31,30 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
+  a:nth-of-type(2) .page_logo__7fc9l {
+    animation: page_logo-spin__5feT0 infinite 20s linear;
   }
 }
 
-.card {
+.page_card__QV0Om {
   padding: 2em;
 }
 
-.read-the-docs {
+.page_read-the-docs__0fK0K {
   color: #888;
 }
 
-.mb-4 {
+.page_mb-4__yIXdd {
   margin-bottom: 1rem; /* Adjust the rem unit based on your spacing preference */
 }
 
-.file-uploader {
+.page_file-uploader__SMCuY {
   display: flex;
   align-items: center;
   gap: 10px; /* Space between elements */
 }
 
-.file-label {
+.page_file-label__K6BK0 {
   background-color: #007bff;
   color: white;
   padding: 6px 12px;
@@ -65,7 +65,7 @@
   gap: 5px; /* Space between icon and text */
 }
 
-.file-name {
+.page_file-name__SbUaA {
   padding: 6px 12px;
   background-color: #f8f9fa;
   border: 2px solid #ced4da; /* Added border */
@@ -75,8 +75,16 @@
   align-items: center;
 }
 
-.attach-icon {
+.page_attach-icon__VrdQM {
   fill: white; /* Change color of SVG icon */
   width: 20px; /* Adjust icon size */
   height: 20px; /* Adjust icon size */
+}
+
+.page_header-container__W69_N {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
 }

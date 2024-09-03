@@ -71,3 +71,23 @@ def lc_retrieval_query(top_chunks = 5,
             RelationshipsData: outsideRels + insideRels
         }} AS metadata
     """
+
+custom_prompt_template = """
+Use the following pieces of information to answer the user's question. Be concise and only use the given information to answer. If you can't answer the question based on the information, say "I don't have enough information to answer that."
+
+Context: {context}
+
+Question: {question}
+
+Answer:
+"""
+
+node_click_cypher_query = """
+    MATCH (e:__Entity__)
+    WHERE e.name = $query
+    RETURN 
+        labels(e) AS labels,
+        e.name as name,
+        e.description as description,
+        e.type as type
+"""

@@ -1,9 +1,9 @@
 "use client"
 
 import { useState } from 'react';
-import './App.css';
 import React from 'react';
 import axios from "axios";
+import styles from './page.module.css';
 import { TextField, IconButton, Typography } from "@material-ui/core";
 import InputAdornment from "@material-ui/core/InputAdornment";
 import SearchIcon from "@material-ui/icons/Search";
@@ -110,30 +110,31 @@ const App: React.FC = () => {
  
 
   return (
-    <div className = "page-container">
-      <div className="header-container">
-      <IconButton 
-        className="menu-icon"
-        edge="start" 
-        color="inherit" 
-        aria-label="menu" 
-        onClick={handleMenuToggle}
-      >
-        <MenuIcon />
+    <div className = {styles["page-container"]}>
+        <IconButton 
+            className={styles["menu-icon"]}
+            edge="start" 
+            color="inherit" 
+            aria-label="menu" 
+            onClick={handleMenuToggle}
+        >
+            <MenuIcon />
         </IconButton>
-      </div>        
-          <h1 className="header">
-          Welcome to Know Your Politician!
-        </h1>
         <Drawer open={isMenuOpen} onClose={handleMenuToggle}>
           {SideMenu}
         </Drawer>
-
-      
-      <h2>Ask a question to get started</h2>
+        <div className={styles["header-container"]}>
+            <Typography variant="h2">
+            Welcome to Know Your Politician!
+            </Typography>
+            <Typography variant="h4">
+                Ask a question to get started
+            </Typography>
+        </div>
+        
       <VStack>
-      <div className="mb-4">
-          <form onSubmit={handleSearchSubmit} className="search">
+      <div className={styles["mb-4"]}>
+          <form onSubmit={handleSearchSubmit} className={styles["search"]}>
           <TextField
             label="Search"
             value={searchQuery}
@@ -157,20 +158,20 @@ const App: React.FC = () => {
           </div>)}
         
         <h1>or</h1>
-        <div className="file-uploader">
+        <div className={styles["file-uploader"]}>
           <HStack>
           <input 
                 type="file" 
                 accept=".pdf" 
                 onChange={onFileLoad} 
                 style={{ display: 'none' }} 
-                id="file-input" 
+                id={styles["file-input"]}
             />
-            <label htmlFor="file-input" className="file-label">
-              <AttachFileIcon className="attach-icon"/>
+            <label htmlFor="file-input" className={styles['file-label']}>
+              <AttachFileIcon className={styles["attach-icon"]}/>
               Choose a File to Upload
             </label>
-            <span className="file-name">{fileName}</span>
+            <span className={styles["file-name"]}>{fileName}</span>
           {file && 
           <IconButton 
               onClick={()=>setFile(null)}
@@ -180,7 +181,7 @@ const App: React.FC = () => {
           }
           </HStack>
         </div>
-        <div className="mb-4">
+        <div className={styles["mb-4"]}>
           {uploading ?         
             // <CircularProgress size={100} strokeWidth={10} percentage={75}/> :
             // <button onClick={uploadFile} disabled={!file}>Upload PDF</button>
