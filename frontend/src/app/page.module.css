@@ -77,3 +77,11 @@
   width: 20px; /* Adjust icon size */
   height: 20px; /* Adjust icon size */
 }
+
+.header-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+}

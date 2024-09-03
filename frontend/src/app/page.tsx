@@ -1,6 +1,9 @@
+"use client"
+
 import { useState } from 'react';
-import './App.css';
+import React from 'react';
 import axios from "axios";
+import styles from './page.module.css';
 import { TextField, IconButton, Typography } from "@material-ui/core";
 import InputAdornment from "@material-ui/core/InputAdornment";
 import SearchIcon from "@material-ui/icons/Search";
@@ -10,6 +13,9 @@ import { CircularProgress, VStack, HStack } from "@chakra-ui/react";
 import CloseIcon from '@mui/icons-material/Close';
 import GraphComponent from './graph/GraphComponent';
 import { RelationshipMetadata, NodeData } from './graph/GraphData';
+import MenuIcon from '@mui/icons-material/Menu';
+import { SideMenu } from './components/SideMenu';
+import Drawer from '@mui/material/Drawer';
 
 
 const App: React.FC = () => {
@@ -21,7 +27,15 @@ const App: React.FC = () => {
   const [graphData, setGraphData] = useState<RelationshipMetadata[]>([]);
   const [entityData, setEntityData] = useState<NodeData>();
   const [uploading, setUploading] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  
   const host = "http://localhost:8000"
+
+  const handleMenuToggle = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
+
   const onFileLoad = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files ? event.target.files[0] : null;
     if (selectedFile) {
@@ -96,14 +110,31 @@ const App: React.FC = () => {
  
 
   return (
-    <>
-      <h1>
-        Welcome to Know Your Politician!
-      </h1>
-      <h2>Ask a question to get started</h2>
+    <div className = {styles["page-container"]}>
+        <IconButton 
+            className={styles["menu-icon"]}
+            edge="start" 
+            color="inherit" 
+            aria-label="menu" 
+            onClick={handleMenuToggle}
+        >
+            <MenuIcon />
+        </IconButton>
+        <Drawer open={isMenuOpen} onClose={handleMenuToggle}>
+          {SideMenu}
+        </Drawer>
+        <div className={styles["header-container"]}>
+            <Typography variant="h2">
+            Welcome to Know Your Politician!
+            </Typography>
+            <Typography variant="h4">
+                Ask a question to get started
+            </Typography>
+        </div>
+        
       <VStack>
-      <div className="mb-4">
-          <form onSubmit={handleSearchSubmit} className="search">
+      <div className={styles["mb-4"]}>
+          <form onSubmit={handleSearchSubmit} className={styles["search"]}>
           <TextField
             label="Search"
             value={searchQuery}
@@ -126,22 +157,21 @@ const App: React.FC = () => {
             <GraphComponent metadata={graphData} entityData={entityData} />
           </div>)}
         
-        {/* <Typography>{graphData}</Typography> */}
         <h1>or</h1>
-        <div className="file-uploader">
+        <div className={styles["file-uploader"]}>
           <HStack>
           <input 
                 type="file" 
                 accept=".pdf" 
                 onChange={onFileLoad} 
                 style={{ display: 'none' }} 
-                id="file-input" 
+                id={styles["file-input"]}
             />
-            <label htmlFor="file-input" className="file-label">
-              <AttachFileIcon className="attach-icon"/>
+            <label htmlFor="file-input" className={styles['file-label']}>
+              <AttachFileIcon className={styles["attach-icon"]}/>
               Choose a File to Upload
             </label>
-            <span className="file-name">{fileName}</span>
+            <span className={styles["file-name"]}>{fileName}</span>
           {file && 
           <IconButton 
               onClick={()=>setFile(null)}
@@ -151,7 +181,7 @@ const App: React.FC = () => {
           }
           </HStack>
         </div>
-        <div className="mb-4">
+        <div className={styles["mb-4"]}>
           {uploading ?         
             // <CircularProgress size={100} strokeWidth={10} percentage={75}/> :
             // <button onClick={uploadFile} disabled={!file}>Upload PDF</button>
@@ -172,7 +202,7 @@ const App: React.FC = () => {
         </div>
         <div>{fileUploadMessage}</div>
       </VStack>
-    </>
+    </div>
   );
 };
 

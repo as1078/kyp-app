@@ -2,13 +2,17 @@ import React, { useEffect, useRef } from 'react';
 import { Network } from "vis-network";
 import { createGraph } from './CreateGraph';
 import { RelationshipMetadata, NodeData } from "./GraphData"
+import { onNodeClick } from '../api/api'
+import { useRouter } from "next/navigation"
 
 interface GraphComponentProps {
   metadata: RelationshipMetadata[];
   entityData: NodeData;
 }
 
+
 const GraphComponent: React.FC<GraphComponentProps> = ({ metadata, entityData }) => {
+  const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -20,7 +24,21 @@ const GraphComponent: React.FC<GraphComponentProps> = ({ metadata, entityData })
     const options = {
       nodes: {
         shape: 'dot',
-        size: 16
+        size: 16,
+        cursor: 'pointer',
+        chosen: {
+          node: (values, id, selected, hovering) => {
+            if (hovering) {
+              values.cursor = 'pointer';
+            }
+          },
+          label: function(values, id, selected, hovering) {
+            // You can modify label properties here if needed
+          }
+        }
+      },
+      interaction: {
+        hover: true
       },
       physics: {
         forceAtlas2Based: {
@@ -37,6 +55,13 @@ const GraphComponent: React.FC<GraphComponentProps> = ({ metadata, entityData })
     };
 
     const network = new Network(containerRef.current, data, options);
+    network.on('click', function(params) {
+      if (params.nodes.length > 0) {
+        const nodeId = params.nodes[0];
+        onNodeClick(nodeId)
+        router.push(`/${nodeId}`)
+      }
+    });
 
     return () => {
       network.destroy();
