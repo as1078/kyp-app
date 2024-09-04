@@ -2,8 +2,10 @@ import React, { useEffect, useRef } from 'react';
 import { Network } from "vis-network";
 import { createGraph } from './CreateGraph';
 import { RelationshipMetadata, NodeData } from "./GraphData"
-import { onNodeClick } from '../api/api'
+import { getCurrNode } from '../api/api'
+import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from "next/navigation"
+import { AppDispatch } from "../store/store"
 
 interface GraphComponentProps {
   metadata: RelationshipMetadata[];
@@ -13,6 +15,7 @@ interface GraphComponentProps {
 
 const GraphComponent: React.FC<GraphComponentProps> = ({ metadata, entityData }) => {
   const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -25,17 +28,6 @@ const GraphComponent: React.FC<GraphComponentProps> = ({ metadata, entityData })
       nodes: {
         shape: 'dot',
         size: 16,
-        cursor: 'pointer',
-        chosen: {
-          node: (values, id, selected, hovering) => {
-            if (hovering) {
-              values.cursor = 'pointer';
-            }
-          },
-          label: function(values, id, selected, hovering) {
-            // You can modify label properties here if needed
-          }
-        }
       },
       interaction: {
         hover: true
@@ -58,10 +50,16 @@ const GraphComponent: React.FC<GraphComponentProps> = ({ metadata, entityData })
     network.on('click', function(params) {
       if (params.nodes.length > 0) {
         const nodeId = params.nodes[0];
-        onNodeClick(nodeId)
+        dispatch(getCurrNode(nodeId))
         router.push(`/${nodeId}`)
       }
     });
+    network.on('hoverNode', (node) => {
+      const container = containerRef?.current
+      if (container) {
+        container.style.cursor = 'pointer';
+      }
+    })
 
     return () => {
       network.destroy();
