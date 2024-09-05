@@ -133,31 +133,38 @@ const App: React.FC = () => {
         </div>
         
       <VStack>
-      <div className={styles["mb-4"]}>
-          <form onSubmit={handleSearchSubmit} className={styles["search"]}>
-          <TextField
-            label="Search"
-            value={searchQuery}
-            onChange={(e)=>setSearchQuery(e.target.value)}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="start">
-                  <IconButton type="submit">
-                    <SearchIcon />
-                  </IconButton>
-                </InputAdornment>
-              )
-            }}
-          />
+      <div className={styles["search-form"]}>
+          <form onSubmit={handleSearchSubmit}>
+            <TextField
+              label="Search"
+              fullWidth
+              value={searchQuery}
+              onChange={(e)=>setSearchQuery(e.target.value)}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="start">
+                    <IconButton type="submit">
+                      <SearchIcon />
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
+            />
           </form>
         </div>
-        <Typography>{searchAnswer}</Typography>
-        {graphData.length > 0 && entityData && (
+        <Typography className={styles["search-answer"]}>{searchAnswer}</Typography>
+        {/* {graphData.length > 0 && entityData && (
           <div style={{ width: '100%', height: '400px' }}>
             <GraphComponent metadata={graphData} entityData={entityData} />
-          </div>)}
-        
-        <h1>or</h1>
+          </div>)} */}
+        <div className={styles.graphContainer}>
+        {graphData.length > 0 && entityData && (
+          <div className={styles.graphWrapper}>
+            <GraphComponent metadata={graphData} entityData={entityData} />
+          </div>
+        )}
+      </div>
+        <Typography className={styles["or"]} variant="h2">or</Typography>
         <div className={styles["file-uploader"]}>
           <HStack>
           <input 
