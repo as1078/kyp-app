@@ -3,7 +3,7 @@ import { Network } from "vis-network";
 import { createGraph } from './CreateGraph';
 import { RelationshipMetadata, NodeData } from "./GraphData"
 import { getCurrNode } from '../api/api'
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { useRouter } from "next/navigation"
 import { AppDispatch } from "../store/store"
 
@@ -50,8 +50,12 @@ const GraphComponent: React.FC<GraphComponentProps> = ({ metadata, entityData })
     network.on('click', function(params) {
       if (params.nodes.length > 0) {
         const nodeId = params.nodes[0];
+        console.log(nodeId);
         dispatch(getCurrNode(nodeId))
         router.push(`/${nodeId}`)
+      } else if (params.edges.length > 0) {
+        const edgeId = params.edges
+        console.log("Edge: " + edgeId)
       }
     });
     network.on('hoverNode', (node) => {

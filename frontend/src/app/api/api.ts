@@ -10,7 +10,20 @@ export const getCurrNode = createAsyncThunk(
         const response = await axios.get(host + `/getNode?node_name=${nodeName}`)
         console.log(response)
         return response.data.result;
-    } catch (error) {
+    } catch (error: any) {
         return thunkAPI.rejectWithValue(error.response.data);
     }
   });
+
+  export const getGraphData = createAsyncThunk(
+    'graph/getGraphData',
+    async (searchQuery: string, thunkAPI) => {
+      try {
+        const response = await axios.get(host + `/search?query=${searchQuery}`)
+        console.log(response)
+        return response.data
+      } catch (error: any) {
+        return thunkAPI.rejectWithValue(error.response.data);
+      }
+    }
+  )

@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit'
+import { createSlice } from '@reduxjs/toolkit'
 import { getCurrNode } from '../api/api'
 
 // Define a type for the slice state
@@ -20,7 +20,7 @@ const initialState: NodeState = {
 }
 
 export const nodeSlice = createSlice({
-  name: 'counter',
+  name: 'node',
   // `createSlice` will infer the state type from the `initialState` argument
   initialState,
   reducers: {},
