@@ -9,7 +9,7 @@ vectorDB = VectorDB()
 
 origins = [
     "http://localhost:5173",  # Adjust this to the URL/port of your React app
-    "http://127.0.0.1:5173",  # Include any other origins as needed
+    "http://localhost:3000",  # Include any other origins as needed
 ]
 
 app.add_middleware(
@@ -40,10 +40,10 @@ async def upload_paragraph(file: UploadFile = File(...)):
 def search(query: str):
     print(f"Received query: {query}")
     answer, metadata = vectorDB.query_graph(query)
-    print(answer)
+    print(f"Answer: {answer}")
     if not answer:
         return JSONResponse(content={'error': 'We were unable to generate an answer for the query'}, status_code=500)
-    return JSONResponse(content={'answer': answer, 'metadata': metadata}, status_code=200)
+    return JSONResponse(content={'answer': answer, 'metadata': metadata, 'query': query}, status_code=200)
 
 @app.get("/getNode")
 def get_node(node_name: str):

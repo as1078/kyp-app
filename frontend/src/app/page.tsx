@@ -12,22 +12,24 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 import { CircularProgress, VStack, HStack } from "@chakra-ui/react";
 import CloseIcon from '@mui/icons-material/Close';
 import GraphComponent from './graph/GraphComponent';
-import { RelationshipMetadata, NodeData } from './graph/GraphData';
 import MenuIcon from '@mui/icons-material/Menu';
 import { SideMenu } from './components/SideMenu';
 import Drawer from '@mui/material/Drawer';
+import { getGraphData } from './api/api'
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from "./store/store"
+
 
 
 const App: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState('No file chosen');
   const [fileUploadMessage, setFileUploadMessage] = useState("");
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchAnswer, setSearchAnswer] = useState('');
-  const [graphData, setGraphData] = useState<RelationshipMetadata[]>([]);
-  const [entityData, setEntityData] = useState<NodeData>();
   const [uploading, setUploading] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const dispatch = useDispatch<AppDispatch>();
+  const graphInfo = useSelector((state: RootState) => state.graph)
   
   const host = "http://localhost:8000"
 
@@ -76,36 +78,7 @@ const App: React.FC = () => {
 
   const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    handleSearch();
-  }
-
-  async function handleSearch () {
-    await axios.get(host + `/search?query=${searchQuery}`)
-      .then(res => {
-        if (res.status === 200) {
-          console.log(res)
-          setSearchAnswer(res.data.answer)
-          const metadata = res.data.metadata
-          const entityData = metadata.EntityData
-          console.log(entityData)
-          const relationshipsData = metadata.RelationshipsData
-          const parsedMetadata: RelationshipMetadata[] = relationshipsData.map((item: any) => ({
-            descriptionText: item.descriptionText,
-            entityName1: item.entityName1,
-            entityName2: item.entityName2,
-            type: item.type
-          }));
-          const firstEntity = entityData[0]
-          const parsedEntityData = new NodeData("1", firstEntity.name)
-          setEntityData(parsedEntityData);
-          setGraphData(parsedMetadata)
-          console.log(parsedMetadata)
-        } else {
-          console.error("Unexpected status code:", res.status);
-        }
-      }).catch(error => {
-        console.error("Axios request error:", error);
-    })
+    dispatch(getGraphData(searchQuery));
   }
  
 
@@ -133,31 +106,39 @@ const App: React.FC = () => {
         </div>
         
       <VStack>
-      <div className={styles["mb-4"]}>
-          <form onSubmit={handleSearchSubmit} className={styles["search"]}>
-          <TextField
-            label="Search"
-            value={searchQuery}
-            onChange={(e)=>setSearchQuery(e.target.value)}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="start">
-                  <IconButton type="submit">
-                    <SearchIcon />
-                  </IconButton>
-                </InputAdornment>
-              )
-            }}
-          />
+      <div className={styles["search-form"]}>
+          <form onSubmit={handleSearchSubmit}>
+            <TextField
+              label="Search"
+              fullWidth
+              value={searchQuery}
+              onChange={(e)=>setSearchQuery(e.target.value)}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="start">
+                    <IconButton type="submit">
+                      <SearchIcon />
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
+            />
           </form>
         </div>
-        <Typography>{searchAnswer}</Typography>
-        {graphData.length > 0 && entityData && (
+        <Typography className={styles["search-answer"]}>{graphInfo.answer}</Typography>
+        {/* {graphData.length > 0 && entityData && (
           <div style={{ width: '100%', height: '400px' }}>
             <GraphComponent metadata={graphData} entityData={entityData} />
-          </div>)}
-        
-        <h1>or</h1>
+          </div>)} */}
+        {graphInfo.graphData.length > 0 && graphInfo.entityData && (
+          <div className={styles.graphContainer}>
+            <div className={styles.graphWrapper}>
+              <GraphComponent metadata={graphInfo.graphData} entityData={graphInfo.entityData} />
+            </div>
+          </div>
+        )}
+      
+        <Typography className={styles["or"]} variant="h2">or</Typography>
         <div className={styles["file-uploader"]}>
           <HStack>
           <input 

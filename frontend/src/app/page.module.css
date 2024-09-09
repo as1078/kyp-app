@@ -5,6 +5,31 @@
   text-align: center;
 }
 
+.page-container {
+  width: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.graphContainer {
+  width: 50%;  /* Adjust this value to control the width of the box */
+  height: 500px;  /* Adjust this value to control the height of the box */
+  margin: 20px auto;  /* Centers the box and adds some vertical margin */
+  border: 2px solid #000;  /* Adds a border around the box */
+  padding: 10px;  /* Adds some inner spacing */
+  box-sizing: border-box;  /* Includes padding and border in the element's dimensions */
+  overflow: hidden;  /* Prevents content from spilling out of the box */
+}
+
+.graphWrapper {
+  width: 100%;
+  height: 100%;
+  /* You can adjust the position of the graph within the container using margins or transforms */
+  /* For example, to move it down and to the right: */
+  margin-top: 20px;
+  margin-left: 20px;
+}
+
 .logo {
   height: 6em;
   padding: 1.5em;
@@ -45,6 +70,11 @@
   margin-bottom: 1rem; /* Adjust the rem unit based on your spacing preference */
 }
 
+.or {
+  padding-bottom: 2rem; /* Adjust the rem unit based on your spacing preference */
+}
+
+
 .file-uploader {
   display: flex;
   align-items: center;
@@ -84,4 +114,13 @@
   align-items: center;
   text-align: center;
   width: 100%;
+}
+
+.search-form {
+  width: 50%;
+  margin-bottom: 1rem;
+}
+
+.search-answer {
+  text-align: center;
 }

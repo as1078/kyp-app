@@ -31,15 +31,14 @@ class VectorDB():
         self.llm = ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo", openai_api_key=openai.api_key)
         self.lc_retrieval_query = lc_retrieval_query()
         self.lc_vector = Neo4jVector.from_existing_index(
-                    OpenAIEmbeddings(model="text-embedding-3-small"),
+                    OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=openai.api_key),
                     url=self.neo4j_url,
                     username=self.neo4j_user,
                     password=self.neo4j_password,
                     index_name="entity",
-                    retrieval_query=self.lc_retrieval_query)
-        CUSTOM_PROMPT = PromptTemplate(
-            template=custom_prompt_template, input_variables=["context", "question"]
-        )
+                    retrieval_query=self.lc_retrieval_query
+                    )
+        
         self.qa_chain = RetrievalQA.from_chain_type(
                         llm=self.llm,
                         retriever=self.lc_vector.as_retriever(),
@@ -105,10 +104,7 @@ class VectorDB():
         print("User input: " + user_input)
         response = self.qa_chain.invoke({"query": user_input})
         source = response.get('source_documents', [])[0]
-        print(response)
         metadata = source.metadata
-        #relationships_data = metadata['RelationshipsData']
-        #return (response["result"], relationships_data)
         return (response["result"], metadata)
     
     def retrieve_node_data(self, user_input):

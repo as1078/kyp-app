@@ -1,9 +1,13 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Network } from "vis-network";
 import { createGraph } from './CreateGraph';
-import { RelationshipMetadata, NodeData } from "./GraphData"
-import { onNodeClick } from '../api/api'
+import { RelationshipMetadata, NodeData, EdgeData } from "./GraphData"
+import { getCurrNode } from '../api/api'
+import { useDispatch } from 'react-redux';
 import { useRouter } from "next/navigation"
+import { AppDispatch } from "../store/store"
+import RelationDialog from "./RelationDialog"
+import { FullItem } from "vis-data/declarations/data-interface";
 
 interface GraphComponentProps {
   metadata: RelationshipMetadata[];
@@ -13,7 +17,26 @@ interface GraphComponentProps {
 
 const GraphComponent: React.FC<GraphComponentProps> = ({ metadata, entityData }) => {
   const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
   const containerRef = useRef<HTMLDivElement>(null);
+  const networkRef = useRef<Network | null>(null);
+  const [selectedEdge, setSelectedEdge] = useState<FullItem<EdgeData, "id"> | null>();
+  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
+
+  const handleCloseDialog = () => {
+    console.log("handleCloseDialog called");
+    setSelectedEdge(null);
+    if (selectedEdgeId && networkRef.current) {
+      networkRef.current.updateEdge(selectedEdgeId, { width: 1 }); // Reset to normal width
+      setSelectedEdgeId(null);
+    }
+  };
+
+  useEffect(() => {
+    console.log("useEffect ran");
+
+    console.log("Selected Edge value: " + !!selectedEdge)
+  }, [selectedEdge])
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -25,17 +48,6 @@ const GraphComponent: React.FC<GraphComponentProps> = ({ metadata, entityData })
       nodes: {
         shape: 'dot',
         size: 16,
-        cursor: 'pointer',
-        chosen: {
-          node: (values, id, selected, hovering) => {
-            if (hovering) {
-              values.cursor = 'pointer';
-            }
-          },
-          label: function(values, id, selected, hovering) {
-            // You can modify label properties here if needed
-          }
-        }
       },
       interaction: {
         hover: true
@@ -55,20 +67,49 @@ const GraphComponent: React.FC<GraphComponentProps> = ({ metadata, entityData })
     };
 
     const network = new Network(containerRef.current, data, options);
+
+    networkRef.current = network;
+        
     network.on('click', function(params) {
       if (params.nodes.length > 0) {
         const nodeId = params.nodes[0];
-        onNodeClick(nodeId)
+        console.log(nodeId);
+        dispatch(getCurrNode(nodeId))
         router.push(`/${nodeId}`)
+      } else if (params.edges.length > 0) {
+        const edgeId = params.edges[0];
+        const edge = edges.get(edgeId);
+        if (edge) {
+          //@ts-ignore
+          setSelectedEdge(edge)
+          setSelectedEdgeId(edgeId);
+          network.updateEdge(edgeId, { width: 2 });
+        }
       }
     });
+    network.on('hoverNode', (node) => {
+      const container = containerRef?.current
+      if (container) {
+        container.style.cursor = 'pointer';
+      }
+    })
 
     return () => {
-      network.destroy();
+      if (networkRef.current) {
+        networkRef.current.destroy();
+      }
     };
   }, [metadata, entityData]);
 
-  return <div ref={containerRef} style={{ height: '600px', width: '100%' }} />;
+
+  return(
+    <div>
+      <div ref={containerRef} style={{ height: '600px', width: '100%' }}/>;
+      {selectedEdge && <RelationDialog edge={selectedEdge} onClose={handleCloseDialog}/>}
+    </div>
+
+  ) 
 };
+
 
 export default GraphComponent;

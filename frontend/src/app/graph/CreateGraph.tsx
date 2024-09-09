@@ -21,7 +21,7 @@ export function createGraph(metadata: RelationshipMetadata[], entityData: NodeDa
         id: index,
         from: item.entityName1,
         to: item.entityName2,
-        title: item.descriptionText
+        description: item.descriptionText
       });
     });
   
