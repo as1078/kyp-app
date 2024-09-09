@@ -35,9 +35,6 @@ export const graphSlice = createSlice({
         state.answer = action.payload.answer;
         state.query = action.payload.query;
         const entityData = action.payload.metadata.EntityData;
-        console.log(action.payload);
-        console.log(action.payload.answer);
-        console.log(entityData);
         const firstEntity = entityData[0]
         state.entityData = new NodeData("1", firstEntity.name)
         const relationshipsData = action.payload.metadata.RelationshipsData;

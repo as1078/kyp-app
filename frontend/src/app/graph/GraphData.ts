@@ -21,6 +21,6 @@ export interface RelationshipMetadata {
     id: number;
     from: string;
     to: string;
-    title: string;
+    description: string;
   }
   
