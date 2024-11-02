@@ -2,6 +2,8 @@ from fastapi import FastAPI, HTTPException, File, UploadFile
 from fastapi.responses import JSONResponse
 from vectorDB import VectorDB
 from fastapi.middleware.cors import CORSMiddleware
+#from langchain_core.runnables import RunnableLambda
+from pydantic import BaseModel
 
 app = FastAPI()
 
@@ -19,7 +21,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 ## UPLOAD A PARGRAPH AND STORE INTO DB
 @app.post('/uploadParagraph')
@@ -52,9 +53,6 @@ def get_node(node_name: str):
         return JSONResponse(content={'result': result}, status_code=200)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
-    return
 
 
 @app.get("/")

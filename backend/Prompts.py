@@ -1,7 +1,8 @@
 def lc_retrieval_query(top_chunks = 5,
         top_communities = 3,
         top_outside_rels = 10,
-        top_inside_rels = 10
+        top_inside_rels = 10,
+        top_documents=10
 ):
     return f"""
     WITH collect(node) as nodes
@@ -15,6 +16,15 @@ def lc_retrieval_query(top_chunks = 5,
         ORDER BY freq DESC
         LIMIT {top_chunks}
     }} AS text_mapping,
+    // Document Mapping
+    collect {{
+        UNWIND nodes as n
+        MATCH (n)<-[:HAS_ENTITY]->(c:__Chunk__)-[:PART_OF]->(d:__Document__)
+        WITH d, count(distinct n) as freq
+        RETURN d
+        ORDER BY freq DESC
+        LIMIT {top_documents}
+    }} AS document_mapping,
     // Entity - Report Mapping
     collect {{
         UNWIND nodes as n
@@ -60,7 +70,6 @@ def lc_retrieval_query(top_chunks = 5,
             name: n.name
         }} as entity
     }} as entities
-    // We don't have covariates or claims here
     RETURN {{
         Chunks: text_mapping, Reports: report_mapping, 
         Relationships: [rel IN (outsideRels + insideRels) | rel.descriptionText], 
@@ -68,7 +77,8 @@ def lc_retrieval_query(top_chunks = 5,
         }} AS text, 1.0 AS score,
         {{
             EntityData: entities,
-            RelationshipsData: outsideRels + insideRels
+            RelationshipsData: outsideRels + insideRels,
+            Documents: document_mapping
         }} AS metadata
     """
 
@@ -82,12 +92,18 @@ Question: {question}
 Answer:
 """
 
-node_click_cypher_query = """
+def node_click_cypher_query(query, top_docs=100):
+    f"""
     MATCH (e:__Entity__)
-    WHERE e.name = $query
-    RETURN 
-        labels(e) AS labels,
-        e.name as name,
-        e.description as description,
-        e.type as type
+    WHERE e.name = {query}
+    MATCH (e)<-[:HAS_ENTITY]-(c:__Chunk__)-[:PART_OF]->(d:__Document__)
+    WITH e, d
+    ORDER BY d.fatalities DESC
+    WITH e, collect(DISTINCT d)[0..{top_docs}] AS limited_docs
+    RETURN
+        labels(e) AS entity_labels
+        e.name AS entity_name
+        e.description AS entity_description
+        e.type AS entity_type
+        limited_docs AS associated_documents
 """

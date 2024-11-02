@@ -1,4 +1,4 @@
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     OPENAI_API_KEY: str
@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     NEO4J_URL: str
     NEO4J_USER: str
     NEO4J_PASSWORD: str
+    ACLED_KEY: str
 
     class Config:
         env_file = ".env"
