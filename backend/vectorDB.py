@@ -1,24 +1,13 @@
-from PyPDF2 import PdfReader
-from langchain.text_splitter import CharacterTextSplitter
 from typing import List
 import openai
-import io
-import uuid
-from langchain_core.documents import Document
-from langchain_community.graphs.graph_document import GraphDocument
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from config import settings
 from neo4j import GraphDatabase
 from Prompts import lc_retrieval_query, node_click_cypher_query
-from db import EntityNode, DocumentNode
-from langchain_core.runnables import RunnableLambda
-from langchain.prompts import PromptTemplate
+from db import EntityNode, DocumentNode, LangGraphInput
 from langchain_community.vectorstores import Neo4jVector
 from langchain.chains import RetrievalQA
 from typing import Dict, Any
-
-
-
 
 class VectorDB():
     def __init__(self):
@@ -102,15 +91,13 @@ class VectorDB():
     def retrieve_node_data(self, user_input):
         node_prompt = node_click_cypher_query(user_input)
         cypher_results = self.db_query(node_prompt)
+        return cypher_results
+
+    def prep_lang_graph_input(self, cypher_results) -> LangGraphInput:
         entity_data = []
         doc_data = []
         for result in cypher_results:
             entity_data.append(self.process_entity(result))
             doc_data.append(self.process_document(result))
-        return result
-
-    
-            
-
-
-        
+        graph_input = LangGraphInput(entities=entity_data, documents=doc_data)
+        return graph_input

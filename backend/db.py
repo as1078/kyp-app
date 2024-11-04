@@ -1,5 +1,8 @@
-from typing import List
+from typing import List, TypedDict, Annotated, Sequence
 from pydantic import BaseModel
+from langchain_core.messages import BaseMessage
+import operator
+
 class EntityNode(BaseModel):
     labels: List[str]
     name: str
@@ -31,7 +34,7 @@ class LangGraphInput(BaseModel):
     entities: List[EntityNode]
     documents: List[DocumentNode]
 
-class GraphState(BaseModel):
+class GraphState(TypedDict):
     input: LangGraphInput
-    output: str = ""
-    current_step: str = ""
+    messages: Annotated[Sequence[BaseMessage], operator.add]
+    sender: str

@@ -2,7 +2,7 @@ import { createSlice } from '@reduxjs/toolkit'
 import { getCurrNode } from '../api/api'
 
 // Define a type for the slice state
-interface NodeState {
+interface NodeData {
   labels: String[],
   name: String,
   description: String,
@@ -10,13 +10,16 @@ interface NodeState {
   status: String
 }
 
-// Define the initial state using that type
+interface NodeState {
+  nodes: NodeData[];
+  status: 'idle' | 'loading' | 'succeeded' | 'failed';
+  error: string | null;
+}
+
 const initialState: NodeState = {
-  labels: [],
-  name: '',
-  description: '',
-  type: '',
-  status: 'idle'
+  nodes: [],
+  status: 'idle',
+  error: null
 }
 
 export const nodeSlice = createSlice({
@@ -31,14 +34,15 @@ export const nodeSlice = createSlice({
       })
       .addCase(getCurrNode.fulfilled, (state, action) => {
         state.status = 'succeeded';
-        state.labels = action.payload.labels;
-        state.name = action.payload.name;
-        state.description = action.payload.description;
-        state.type = action.payload.type;
+        state.nodes = action.payload.cypherResult.map((node: any) => ({
+          labels: node.labels || [],
+          name: node.name || '',
+          description: node.description || '',
+          type: node.type || ''
+        }));
       })
       .addCase(getCurrNode.rejected, (state, action) => {
         state.status = 'failed';
-        //state.error = action.error.message;
       });
   }
 })

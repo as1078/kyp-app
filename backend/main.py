@@ -1,13 +1,12 @@
 from fastapi import FastAPI, HTTPException, File, UploadFile
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from vectorDB import VectorDB
 from fastapi.middleware.cors import CORSMiddleware
-#from langchain_core.runnables import RunnableLambda
-from pydantic import BaseModel
+from langgraph.lang_graph import LangGraph
 
 app = FastAPI()
-
 vectorDB = VectorDB()
+lang_graph = LangGraph()
 
 origins = [
     "http://localhost:5173",  # Adjust this to the URL/port of your React app
@@ -46,14 +45,26 @@ def search(query: str):
         return JSONResponse(content={'error': 'We were unable to generate an answer for the query'}, status_code=500)
     return JSONResponse(content={'answer': answer, 'metadata': metadata, 'query': query}, status_code=200)
 
-@app.get("/getNode")
-def get_node(node_name: str):
+@app.get("/getNodeAndStream")
+async def get_node(node_name: str):
     try:
-        result = vectorDB.retrieve_node_data(node_name)
-        return JSONResponse(content={'result': result}, status_code=200)
+        db_result = vectorDB.retrieve_node_data(node_name)
+        lang_graph_input = vectorDB.prep_lang_graph_input(db_result)
+
+        async def event_generator():
+            yield JSONResponse(content={'type': 'cypher_result', 'result': lang_graph_input.entities})
+        
+            async for event in lang_graph.stream_events(lang_graph_input):
+                if event.get('type') == 'folium_map':
+                    yield JSONResponse(content={
+                        'type': 'folium_map',
+                        'content': event['content'],
+                    })
+                elif event.get('type') == 'plotly_map':
+                    yield JSONResponse(content={'type': 'plotly_map', 'content': event['content']})
+        return StreamingResponse(event_generator(), media_type="application/json")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @app.get("/")
 async def root():
