@@ -9,7 +9,7 @@ interface StreamResult {
 }
 
 export const getCurrNode = createAsyncThunk<StreamResult, string>(
-  'node/getCurrNodeAndStream',
+  'node/getNodeAndStream',
   async (nodeName: string, { dispatch }) => {
     try {
       const response = await fetch(`${host}/getNodeAndStream?node_name=${nodeName}`, {
@@ -48,18 +48,21 @@ export const getCurrNode = createAsyncThunk<StreamResult, string>(
                   langGraphResult.push(data.content);
                   const img = document.createElement('img');
                   img.src = `data:image/png;base64,${data.content}`;
-                  document.body.appendChild(img);                }
+                  document.body.appendChild(img);                
+                }
               }
             }
 
             return { cypherResult, langGraphResult };
           } catch (error) {
+            console.log(error);
             reject(error);
           }
         }
         readStream();
       });
     } catch (error) {
+      console.log(error);
       throw error;
     }
   }

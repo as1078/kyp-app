@@ -1,17 +1,18 @@
-from util import router, create_agent, agent_node, folium_tool, plotly_tool
+from .util import router, create_agent, agent_node, folium_tool, plotly_tool, dummy_tool
 from langgraph.graph import END, StateGraph, START
 from langgraph.prebuilt import ToolNode
 from langchain_openai import ChatOpenAI
 from db import LangGraphInput, GraphState
+from config import settings
 import functools
 
 class LangGraph():
     def __init__(self):
-        self.llm = ChatOpenAI(model="gpt-4o")
+        self.llm = ChatOpenAI(model="gpt-4o", openai_api_key=settings.OPENAI_API_KEY)
 
         select_chart_agent = create_agent(
             self.llm,
-            [],
+            [dummy_tool],
             system_message="""Given a List[EntityNode], use the labels on the EntityNodes and the event_type and sub_event_type to determine what the
               best graphs would be to display. For instance, consider maps showing various events and bar graphs showing fatalities, but be creative.
               Return the output as a string""",
@@ -25,9 +26,9 @@ class LangGraph():
             system_message="Any charts you display will be visible by the user.",
         )
         self.generator_node = functools.partial(agent_node, agent=chart_agent, name="chart_generator")
-        self.graph = self.create_graph()
         tools = [plotly_tool, folium_tool]
         self.tool_node = ToolNode(tools)
+        self.graph = self.create_graph()
 
     def create_graph(self):
         workflow = StateGraph(GraphState)
@@ -44,7 +45,7 @@ class LangGraph():
         workflow.add_conditional_edges(
             "chart_generator",
             router,
-            {"continue": "chart_selector", "call_tool": "call_tool", END: END},
+            {"continue": END, "call_tool": "call_tool", END: END},
         )
 
         workflow.add_conditional_edges(
@@ -71,7 +72,7 @@ class LangGraph():
         )
 
         events = self.graph.stream(
-            initial_state.model_dump(),
+            initial_state,
             {"recursion_limit": 150},
         )
 

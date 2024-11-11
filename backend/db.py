@@ -1,4 +1,4 @@
-from typing import List, TypedDict, Annotated, Sequence
+from typing import List, TypedDict, Annotated, Sequence, Optional
 from pydantic import BaseModel
 from langchain_core.messages import BaseMessage
 import operator
@@ -7,7 +7,7 @@ class EntityNode(BaseModel):
     labels: List[str]
     name: str
     description: str
-    type: str
+    type: Optional[str] = None
 
 class DocumentNode(BaseModel):
     country: str
@@ -16,7 +16,7 @@ class DocumentNode(BaseModel):
     latitude: float
     admin: str
     title: str
-    civilian_targeting: str
+    civilian_targeting: bool = False
     sub_event_type: str
     actor2: str
     actor1: str
@@ -31,7 +31,7 @@ class DocumentNode(BaseModel):
     longitude: float
 
 class LangGraphInput(BaseModel):
-    entities: List[EntityNode]
+    entities: EntityNode
     documents: List[DocumentNode]
 
 class GraphState(TypedDict):

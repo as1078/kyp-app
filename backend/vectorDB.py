@@ -1,5 +1,6 @@
 from typing import List
 import openai
+import math
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from config import settings
 from neo4j import GraphDatabase
@@ -58,6 +59,9 @@ class VectorDB():
         return (response["result"], filtered_result)
 
     def process_entity(self, result):
+        print(result['entity_labels'])
+        print(result['entity_name'])
+        print(result['entity_description'])
         return EntityNode(
             labels = result["entity_labels"],
             name = result["entity_name"],
@@ -65,8 +69,8 @@ class VectorDB():
             type = result["entity_type"],
         )
     
-    def process_document(self, result):
-        documents = result["associated_documents"]
+    def process_document(self, documents):
+        print("processing document...", documents)
         return DocumentNode(
             country = documents['country'],
             geo_precision = documents['geo_precision'],
@@ -74,15 +78,16 @@ class VectorDB():
             latitude = documents['latitude'],
             admin = documents['admin'],
             title = documents['title'],
-            civilian_targeting = documents['civilian_targeting'],
+            civilian_targeting = documents['civilian_targeting'] == 'Civilian targeting',
             sub_event_type = documents['sub_event_type'],
-            actor2 = documents['actor2'],
+            actor2 = documents['actor2'] if isinstance(documents['actor2'], str) else "",
             actor1 = documents['actor1'],
             event_type = documents['event_type'],
             interaction = documents['interaction'],
             time_precision = documents['time_precision'],
             location = documents['location'],
             id = documents['id'],
+            fatalities = documents['fatalities'],
             region = documents['region'],
             timestamp = documents['timestamp'],
             longitude = documents['longitude'],
@@ -94,10 +99,11 @@ class VectorDB():
         return cypher_results
 
     def prep_lang_graph_input(self, cypher_results) -> LangGraphInput:
-        entity_data = []
+        print("Preparing Lang Graph input...")
+        entity_data = self.process_entity(cypher_results)
         doc_data = []
-        for result in cypher_results:
-            entity_data.append(self.process_entity(result))
+        associated_documents = cypher_results["associated_documents"]
+        for result in associated_documents:
             doc_data.append(self.process_document(result))
         graph_input = LangGraphInput(entities=entity_data, documents=doc_data)
         return graph_input

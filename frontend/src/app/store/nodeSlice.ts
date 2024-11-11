@@ -2,8 +2,8 @@ import { createSlice } from '@reduxjs/toolkit'
 import { getCurrNode } from '../api/api'
 
 // Define a type for the slice state
-interface NodeData {
-  labels: String[],
+interface EntityData {
+  labels: String[] | null,
   name: String,
   description: String,
   type: String,
@@ -11,7 +11,7 @@ interface NodeData {
 }
 
 interface NodeState {
-  nodes: NodeData[];
+  nodes: EntityData[] | null;
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
 }

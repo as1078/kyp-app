@@ -3,6 +3,8 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from vectorDB import VectorDB
 from fastapi.middleware.cors import CORSMiddleware
 from langgraph.lang_graph import LangGraph
+import json
+import asyncio
 
 app = FastAPI()
 vectorDB = VectorDB()
@@ -47,23 +49,32 @@ def search(query: str):
 
 @app.get("/getNodeAndStream")
 async def get_node(node_name: str):
+    print("Node received: ", node_name)
     try:
         db_result = vectorDB.retrieve_node_data(node_name)
         lang_graph_input = vectorDB.prep_lang_graph_input(db_result)
 
         async def event_generator():
-            yield JSONResponse(content={'type': 'cypher_result', 'result': lang_graph_input.entities})
+            yield json.dumps({
+                'type': 'cypher_result', 
+                'result': lang_graph_input.entities.model_dump()
+            }) + '\n'
         
-            async for event in lang_graph.stream_events(lang_graph_input):
+            for event in lang_graph.stream_events(lang_graph_input):
                 if event.get('type') == 'folium_map':
-                    yield JSONResponse(content={
+                    yield json.dumps({
                         'type': 'folium_map',
                         'content': event['content'],
-                    })
+                    }) + '\n'
                 elif event.get('type') == 'plotly_map':
-                    yield JSONResponse(content={'type': 'plotly_map', 'content': event['content']})
-        return StreamingResponse(event_generator(), media_type="application/json")
+                    yield json.dumps({
+                        'type': 'plotly_map', 
+                        'content': event['content']
+                    }) + '\n'
+                await asyncio.sleep(0)
+        return StreamingResponse(event_generator(), media_type="application/x-ndjson")
     except Exception as e:
+        print("Error: " + str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/")

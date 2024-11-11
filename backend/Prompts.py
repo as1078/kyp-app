@@ -93,17 +93,17 @@ Answer:
 """
 
 def node_click_cypher_query(query, top_docs=100):
-    f"""
+    return f"""
     MATCH (e:__Entity__)
-    WHERE e.name = {query}
+    WHERE e.name = '{query}'
     MATCH (e)<-[:HAS_ENTITY]-(c:__Chunk__)-[:PART_OF]->(d:__Document__)
     WITH e, d
     ORDER BY d.fatalities DESC
     WITH e, collect(DISTINCT d)[0..{top_docs}] AS limited_docs
     RETURN
-        labels(e) AS entity_labels
-        e.name AS entity_name
-        e.description AS entity_description
-        e.type AS entity_type
+        labels(e) AS entity_labels,
+        e.name AS entity_name,
+        e.description AS entity_description,
+        e.type AS entity_type,
         limited_docs AS associated_documents
 """

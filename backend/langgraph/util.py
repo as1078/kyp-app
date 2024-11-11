@@ -7,11 +7,11 @@ import pandas as pd
 import folium
 from folium.plugins import MarkerCluster
 import plotly.express as px
+import plotly.io as pio
 import io
 import base64
 from db import LangGraphInput, DocumentNode
 from langchain_core.tools import tool
-from langchain_experimental.utilities import PythonREPL
 
 
 def create_agent(llm, tools, system_message: str):
@@ -36,10 +36,13 @@ def create_agent(llm, tools, system_message: str):
     return prompt | llm.bind_tools(tools)
 
 @tool
-def folium_tool(input: LangGraphInput):
+def folium_tool(input: Annotated[LangGraphInput, "The input data to create a folium map with"]):
+    """Use this to execute create folium maps. If you want to see the output of a value,
+    you should print it out with `print(...)`. This is visible to the user."""
     try:
         docs: List[DocumentNode] = input.documents
-
+        print("Running folium tool")
+        print("Document size: " + len(docs))
         lats = [doc.latitude for doc in docs if doc.latitude is not None]
         lons = [doc.longitude for doc in docs if doc.longitude is not None]
 
@@ -98,6 +101,7 @@ def folium_tool(input: LangGraphInput):
         img_data = io.BytesIO()
         m.save(img_data, close_file=False)
         img_data.seek(0)
+        print("Returned folium tool")
         return {
             "type": "folium_map",
             "content": base64.b64encode(img_data.getvalue()).decode('utf-8')
@@ -106,8 +110,11 @@ def folium_tool(input: LangGraphInput):
         return {"type": "error", "content": str(e)}
     
 @tool
-def plotly_tool(input: LangGraphInput) -> str:
+def plotly_tool(input: Annotated[LangGraphInput, "The input data to create a plotly graphs with"]):
+    """Use this to execute create plotly graphs. If you want to see the output of a value,
+    you should print it out with `print(...)`. This is visible to the user."""
     try:
+        print("Running plotly tool...")
         docs: List[DocumentNode] = input.documents
 
         # Create a DataFrame from the documents
@@ -135,21 +142,29 @@ def plotly_tool(input: LangGraphInput) -> str:
             yaxis_title='Latitude'
         )
 
-        # Save the plot as an HTML file
-        img_data = io.BytesIO()
-        fig.save(img_data, close_file=False)
-        img_data.seek(0)
+        img_bytes = pio.to_image(fig, format="png")
         return {
             "type": "plotly_map",
-            "content": base64.b64encode(img_data.getvalue()).decode('utf-8')
+            "content": base64.b64encode(img_bytes).decode('utf-8')
         }
+        
     except Exception as e:
         return {"type": "error", "content": str(e)}
+
+@tool
+def dummy_tool(input: Annotated[str, "Any input string"]) -> str:
+    """
+    This is a dummy tool that doesn't perform any significant action.
+    It's used to satisfy the API requirement for at least one tool.
+    """
+    return "Dummy tool was called."
 
 def router(state):
     # This is the router
     messages = state["messages"]
+    print("Sender: " + state['sender'])
     last_message = messages[-1]
+    print("Last message: " + str(last_message))
     if last_message.tool_calls:
         # The previous agent is invoking a tool
         return "call_tool"
@@ -159,6 +174,8 @@ def router(state):
     return "continue"
 
 def agent_node(state, agent, name):
+    print("Running agent node: " + name)
+    print("State: " + str(state))
     result = agent.invoke(state)
     # We convert the agent output into a format that is suitable to append to the global state
     if isinstance(result, ToolMessage):
