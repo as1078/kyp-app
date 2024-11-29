@@ -92,7 +92,7 @@ Question: {question}
 Answer:
 """
 
-def node_click_cypher_query(query, top_docs=100):
+def node_click_cypher_query(query, top_docs=10):
     return f"""
     MATCH (e:__Entity__)
     WHERE e.name = '{query}'
@@ -105,5 +105,6 @@ def node_click_cypher_query(query, top_docs=100):
         e.name AS entity_name,
         e.description AS entity_description,
         e.type AS entity_type,
+        e.id AS entity_id,
         limited_docs AS associated_documents
 """

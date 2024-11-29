@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit'
-import { getCurrNode } from '../api/api'
+import { getCurrNode, updateCypherResult } from '../api/api'
 
 // Define a type for the slice state
 interface EntityData {
@@ -7,17 +7,35 @@ interface EntityData {
   name: String,
   description: String,
   type: String,
-  status: String
 }
 
-interface NodeState {
-  nodes: EntityData[] | null;
-  status: 'idle' | 'loading' | 'succeeded' | 'failed';
-  error: string | null;
+// Type for image in S3
+interface ImageData {
+  filename: string
+  url: string
 }
 
-const initialState: NodeState = {
-  nodes: [],
+interface EntityImageData {
+  entity: EntityData
+  image: ImageData
+  status: 'idle' | 'loading' | 'succeeded' | 'cypher_succeeded' | 'failed';
+  error: String | null
+}
+
+const initialEntity: EntityData = {
+  labels: [],
+  name: '',
+  description: '',
+  type: '',
+}
+
+const initialImage: ImageData = {
+  filename: '',
+  url: '',
+}
+const initialState: EntityImageData = {
+  entity: initialEntity,
+  image: initialImage,
   status: 'idle',
   error: null
 }
@@ -29,17 +47,20 @@ export const nodeSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
+    .addCase(updateCypherResult, (state, action) => {
+      // Update state with cypher result
+      state.status = 'cypher_succeeded';
+      const { labels, name, description, type } = action.payload;
+      Object.assign(state.entity, { labels, name, description, type });
+    })
       .addCase(getCurrNode.pending, (state) => {
         state.status = 'loading';
       })
       .addCase(getCurrNode.fulfilled, (state, action) => {
         state.status = 'succeeded';
-        state.nodes = action.payload.cypherResult.map((node: any) => ({
-          labels: node.labels || [],
-          name: node.name || '',
-          description: node.description || '',
-          type: node.type || ''
-        }));
+        const { s3_key, url } = action.payload.langGraphResult.content;
+      
+        Object.assign(state.image, { filename: s3_key, url });
       })
       .addCase(getCurrNode.rejected, (state, action) => {
         state.status = 'failed';

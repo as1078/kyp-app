@@ -59,10 +59,8 @@ class VectorDB():
         return (response["result"], filtered_result)
 
     def process_entity(self, result):
-        print(result['entity_labels'])
-        print(result['entity_name'])
-        print(result['entity_description'])
         return EntityNode(
+            id = result["entity_id"],
             labels = result["entity_labels"],
             name = result["entity_name"],
             description = result["entity_description"],
@@ -98,6 +96,23 @@ class VectorDB():
         cypher_results = self.db_query(node_prompt)
         return cypher_results
 
+    # def create_data_summary(self, entity_node, documents) -> str:
+    #     # Create a summary of the data for the agent
+    #     return f"""
+    #     EntityNode:
+    #     Labels: {entity_node.labels}
+    #     Name: {entity_node.name}
+    #     Type: {entity_node.type}
+        
+    #     DocumentNodes Summary:
+    #     Total documents: {len(documents)}
+    #     Event types: {set(doc.event_type for doc in documents)}
+    #     Sub-event types: {set(doc.sub_event_type for doc in documents)}
+    #     Countries: {set(doc.country for doc in documents)}
+    #     Date range: {min(doc.timestamp for doc in documents)} to {max(doc.timestamp for doc in documents)}
+    #     Total fatalities: {sum(doc.fatalities for doc in documents)}
+    #     """
+
     def prep_lang_graph_input(self, cypher_results) -> LangGraphInput:
         print("Preparing Lang Graph input...")
         entity_data = self.process_entity(cypher_results)
@@ -105,5 +120,6 @@ class VectorDB():
         associated_documents = cypher_results["associated_documents"]
         for result in associated_documents:
             doc_data.append(self.process_document(result))
-        graph_input = LangGraphInput(entities=entity_data, documents=doc_data)
+        #data_summary = self.create_data_summary(entity_data, doc_data)
+        graph_input = LangGraphInput(entity=entity_data, documents=doc_data)
         return graph_input

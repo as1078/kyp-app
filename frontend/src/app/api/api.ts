@@ -1,22 +1,32 @@
 import axios from 'axios'
-import { createAsyncThunk } from '@reduxjs/toolkit';
+import { createAsyncThunk, createAction } from '@reduxjs/toolkit';
 
 const host = "http://localhost:8000"
 
 interface StreamResult {
   cypherResult: any; // Replace 'any' with the actual type of cypherResult
-  langGraphResult: any[]; // Replace 'any[]' with the actual type of langGraphResult
+  langGraphResult: {
+    type: string;
+    content: {
+      s3_key: string;
+      url: string;
+    }
+  }
 }
+
+// Create a separate action for updating cypher result
+export const updateCypherResult = createAction<any>('node/updateCypherResult');
 
 export const getCurrNode = createAsyncThunk<StreamResult, string>(
   'node/getNodeAndStream',
   async (nodeName: string, { dispatch }) => {
     try {
-      const response = await fetch(`${host}/getNodeAndStream?node_name=${nodeName}`, {
-        method: 'GET',
+      const response = await fetch(`${host}/getNodeAndStream`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ node_name: nodeName }),
       });
 
       if (!response.body) {
@@ -26,11 +36,10 @@ export const getCurrNode = createAsyncThunk<StreamResult, string>(
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
 
-      return new Promise((resolve, reject) => {
+      return new Promise<StreamResult>(async (resolve, reject) => {
         async function readStream() {
           let cypherResult = null;
-          const langGraphResult = [];
-
+          let langGraphResult = null;
           try {
             while (true) {
               const { done, value } = await reader.read();
@@ -40,15 +49,17 @@ export const getCurrNode = createAsyncThunk<StreamResult, string>(
               const lines = chunk.split('\n');
 
               for (const line of lines) {
+                console.log("Line: " + line);
                 if (line.trim() === '') continue;
                 const data = JSON.parse(line);
                 if (data.type === 'cypher_result') {
-                  cypherResult = data.result;
+                  cypherResult = data.content;
+                  dispatch(updateCypherResult(cypherResult));
                 } else if (data.type === 'folium_map' || data.type === 'plotly_map') {
-                  langGraphResult.push(data.content);
-                  const img = document.createElement('img');
-                  img.src = `data:image/png;base64,${data.content}`;
-                  document.body.appendChild(img);                
+                  langGraphResult = data.content;            
+                } else if (data.type === 'error') {
+                  console.log(data.content);
+                  reject(data.content);
                 }
               }
             }
@@ -59,7 +70,8 @@ export const getCurrNode = createAsyncThunk<StreamResult, string>(
             reject(error);
           }
         }
-        readStream();
+        const result = await readStream()
+        resolve(result ?? { cypherResult: null, langGraphResult: null });
       });
     } catch (error) {
       console.log(error);
@@ -67,6 +79,18 @@ export const getCurrNode = createAsyncThunk<StreamResult, string>(
     }
   }
 );
+
+// Separate function to load images from URLs
+export const loadImageFromUrl = async (url: string): Promise<string> => {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return URL.createObjectURL(blob);
+  } catch (error) {
+    console.error('Error loading image:', error);
+    throw error;
+  }
+};
 
   export const getGraphData = createAsyncThunk(
     'graph/getGraphData',

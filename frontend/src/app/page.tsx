@@ -98,7 +98,7 @@ const App: React.FC = () => {
         </Drawer>
         <div className={styles["header-container"]}>
             <Typography variant="h2">
-            Welcome to Know Your Politician!
+            Welcome to the Current Events Tracker!
             </Typography>
             <Typography variant="h4">
                 Ask a question to get started

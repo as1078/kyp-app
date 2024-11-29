@@ -36,7 +36,11 @@ export const graphSlice = createSlice({
         state.query = action.payload.query;
         const entityData = action.payload.metadata.EntityData;
         const firstEntity = entityData[0]
-        state.entityData = new NodeData("1", firstEntity.name)
+        const val: NodeData = {
+          id: "1",
+          label: firstEntity.name,
+        }
+        state.entityData = val;
         const relationshipsData = action.payload.metadata.RelationshipsData;
         const parsedMetadata: RelationshipMetadata[] = relationshipsData.map((item: any) => ({
           descriptionText: item.descriptionText,

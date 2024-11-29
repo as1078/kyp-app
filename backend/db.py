@@ -4,6 +4,7 @@ from langchain_core.messages import BaseMessage
 import operator
 
 class EntityNode(BaseModel):
+    id: str
     labels: List[str]
     name: str
     description: str
@@ -30,11 +31,21 @@ class DocumentNode(BaseModel):
     timestamp: str
     longitude: float
 
+class ChartSpec(BaseModel):
+    chart_type: str
+    data_fields: List[str]
+    title: str
+    description: str
+
 class LangGraphInput(BaseModel):
-    entities: EntityNode
+    entity: EntityNode
     documents: List[DocumentNode]
+    chart_spec: Optional[ChartSpec] = None
 
 class GraphState(TypedDict):
     input: LangGraphInput
     messages: Annotated[Sequence[BaseMessage], operator.add]
     sender: str
+
+class NodeRequest(BaseModel):
+    node_name: str

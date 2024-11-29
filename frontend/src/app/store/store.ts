@@ -5,11 +5,11 @@ import nodeSliceReducer from "./nodeSlice"
 import graphSliceReducer from "./graphSlice"
 import { persistStore, persistReducer } from 'redux-persist';
 import { FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } from 'redux-persist';
-import storage from 'redux-persist/lib/storage'; // defaults to localStorage
+import storageSession from 'redux-persist/lib/storage/session'
 
 const persistConfig = {
   key: 'root',
-  storage,
+  storage: storageSession,
   whitelist: ['node', 'graph'], // only user will be persisted
 };
 

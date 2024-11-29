@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     NEO4J_USER: str
     NEO4J_PASSWORD: str
     ACLED_KEY: str
+    AWS_ACCESS_KEY: str
+    AWS_SECRET_KEY: str
+    S3_REGION: str
 
     class Config:
         env_file = ".env"

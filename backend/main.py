@@ -5,10 +5,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from langgraph.lang_graph import LangGraph
 import json
 import asyncio
+from db import NodeRequest
 
 app = FastAPI()
 vectorDB = VectorDB()
 lang_graph = LangGraph()
+
 
 origins = [
     "http://localhost:5173",  # Adjust this to the URL/port of your React app
@@ -47,20 +49,21 @@ def search(query: str):
         return JSONResponse(content={'error': 'We were unable to generate an answer for the query'}, status_code=500)
     return JSONResponse(content={'answer': answer, 'metadata': metadata, 'query': query}, status_code=200)
 
-@app.get("/getNodeAndStream")
-async def get_node(node_name: str):
-    print("Node received: ", node_name)
+@app.post("/getNodeAndStream")
+async def get_node(request: NodeRequest):
+    print("Node received: ", request.node_name)
     try:
-        db_result = vectorDB.retrieve_node_data(node_name)
+        db_result = vectorDB.retrieve_node_data(request.node_name)
         lang_graph_input = vectorDB.prep_lang_graph_input(db_result)
 
         async def event_generator():
             yield json.dumps({
                 'type': 'cypher_result', 
-                'result': lang_graph_input.entities.model_dump()
+                'content': lang_graph_input.entity.model_dump()
             }) + '\n'
         
             for event in lang_graph.stream_events(lang_graph_input):
+                print("Event: " + str(event))
                 if event.get('type') == 'folium_map':
                     yield json.dumps({
                         'type': 'folium_map',
@@ -71,6 +74,10 @@ async def get_node(node_name: str):
                         'type': 'plotly_map', 
                         'content': event['content']
                     }) + '\n'
+                elif event.get('type') == 'error':
+                    yield JSONResponse(content={'error': 'There was an error generating or fetching the charts the charts' + \
+                                                 event['content']}, status_code=500)
+                    break
                 await asyncio.sleep(0)
         return StreamingResponse(event_generator(), media_type="application/x-ndjson")
     except Exception as e:
