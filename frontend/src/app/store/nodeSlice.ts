@@ -49,22 +49,22 @@ export const nodeSlice = createSlice({
     builder
     .addCase(updateCypherResult, (state, action) => {
       // Update state with cypher result
+      console.log("Promise cypher succeeded");
       state.status = 'cypher_succeeded';
-      const { labels, name, description, type } = action.payload;
-      Object.assign(state.entity, { labels, name, description, type });
+      state.entity = { ...state.entity, ...action.payload };
     })
-      .addCase(getCurrNode.pending, (state) => {
-        state.status = 'loading';
-      })
-      .addCase(getCurrNode.fulfilled, (state, action) => {
-        state.status = 'succeeded';
-        const { s3_key, url } = action.payload.langGraphResult.content;
-      
-        Object.assign(state.image, { filename: s3_key, url });
-      })
-      .addCase(getCurrNode.rejected, (state, action) => {
-        state.status = 'failed';
-      });
+    .addCase(getCurrNode.pending, (state) => {
+      state.status = 'loading';
+    })
+    .addCase(getCurrNode.fulfilled, (state, action) => {
+      console.log("Promise resolved");
+      console.log(action.payload);
+      state.status = 'succeeded';
+      state.image = { ...state.image, ...action.payload.langGraphResult.content}
+    })
+    .addCase(getCurrNode.rejected, (state, action) => {
+      state.status = 'failed';
+    });
   }
 })
 

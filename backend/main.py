@@ -64,15 +64,23 @@ async def get_node(request: NodeRequest):
         
             for event in lang_graph.stream_events(lang_graph_input):
                 print("Event: " + str(event))
-                if event.get('type') == 'folium_map':
+                if 'call_tool' not in event:
+                    continue
+                tool_message = event['call_tool']['messages'][0].content
+                parsed_data = json.loads(tool_message)
+                parsed_data_type = parsed_data['type']
+                content_data = parsed_data['content']
+                print("content_data: " + str(content_data))
+                print("Parsed data type: " + str(parsed_data_type))
+                if parsed_data_type == 'folium_chart':
                     yield json.dumps({
                         'type': 'folium_map',
-                        'content': event['content'],
+                        'content': content_data,
                     }) + '\n'
-                elif event.get('type') == 'plotly_map':
+                elif parsed_data_type == 'plotly_chart':
                     yield json.dumps({
                         'type': 'plotly_map', 
-                        'content': event['content']
+                        'content': content_data
                     }) + '\n'
                 elif event.get('type') == 'error':
                     yield JSONResponse(content={'error': 'There was an error generating or fetching the charts the charts' + \

@@ -13,8 +13,8 @@ import ErrorState from "../components/ErrorState";
 const NodeComponent = () => {
     const { entity, image, status, error } = useSelector((state: RootState) => state.node);
     const [loadedImage, setLoadedImage] = useState<string | null>(null);
-    console.log("entity: " + entity );
-    console.log("image: " + image );
+    console.log("image URL: " + image.url);
+    console.log("image filename: " + image.filename);
     console.log("status: " + status);
     
     useEffect(() => {

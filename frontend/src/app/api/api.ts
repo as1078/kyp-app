@@ -40,31 +40,38 @@ export const getCurrNode = createAsyncThunk<StreamResult, string>(
         async function readStream() {
           let cypherResult = null;
           let langGraphResult = null;
+          let receivedCypherResult = false;
+          let receivedLangGraphResult = false;
           try {
             while (true) {
               const { done, value } = await reader.read();
-              if (done) break;
+              if (done && receivedCypherResult && receivedLangGraphResult) break;
 
               const chunk = decoder.decode(value, { stream: true });
               const lines = chunk.split('\n');
 
               for (const line of lines) {
-                console.log("Line: " + line);
                 if (line.trim() === '') continue;
                 const data = JSON.parse(line);
                 if (data.type === 'cypher_result') {
                   cypherResult = data.content;
+                  receivedCypherResult = true;
                   dispatch(updateCypherResult(cypherResult));
                 } else if (data.type === 'folium_map' || data.type === 'plotly_map') {
-                  langGraphResult = data.content;            
+                  const langGraphMessage = data.content;
+                  receivedLangGraphResult = true;
+                  console.log("LangGraph message: " + langGraphMessage);
+                  const url = langGraphMessage.url;
+                  console.log("LangGraph url: " + url);
+                  langGraphResult = data;
+                  console.log("LangGraph result: " + langGraphResult);
+                  return { cypherResult, langGraphResult };
                 } else if (data.type === 'error') {
                   console.log(data.content);
                   reject(data.content);
                 }
               }
             }
-
-            return { cypherResult, langGraphResult };
           } catch (error) {
             console.log(error);
             reject(error);
